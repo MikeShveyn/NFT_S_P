@@ -3,8 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "crypto-js": "^4.1.1",
-    "ethers": "^6.3.0",
     "react-bootstrap": "^2.7.2",
     "web3": "^1.9.0"
   }

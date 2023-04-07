@@ -1,29 +1,29 @@
 const ethers = require('ethers');
-const fetch = require('node-fetch');
 const axios = require('axios');
 
-async function checkSiteSecurity() {
-  const domain = window.location.hostname;
-
+async function checkSiteSecurity(domain, ssl) {
    // Check if site has SSL
-   const hasSsl = window.location.protocol === "https:";
-
-  const isReal = await fetch(`https://isitarealemail.com/api/email/validate`, {
-    method: "POST",
-    body: JSON.stringify({ email: domain }),
-    headers: { "Content-Type": "application/json" },
-  }).then((res) => res.json());
+   const hasSsl = ssl === "https:";
+   let isReal = true;
+   let isBlacklisted = false;
+  //https://developers.virustotal.com/reference/overview
+  // isReal = await axios({
+  //   url: `https://isitarealemail.com/api/email/validate`,
+  //   method: "post",
+  //   body: JSON.stringify({ email: domain }),
+  //   headers: { "Content-Type": "application/json" },
+  // }).then((res) => res.json());
 
   // Check if site is blacklisted
-  const isBlacklisted = await fetch(`https://my-blacklist-api.com/check?domain=${domain}`)
-    .then((res) => res.json())
-    .then((data) => data.isBlacklisted);
+  // isBlacklisted = await axios(`https://my-blacklist-api.com/check?domain=${domain}`)
+  //   .then((res) => res.json())
+  //   .then((data) => data.isBlacklisted);
 
   return {
     domain: domain,
-    isReal: isReal.data.isReal,
+    isReal: isReal?.data?.isReal || true,
     hasSsl: hasSsl,
-    isBlacklisted: isBlacklisted,
+    isBlacklisted: isBlacklisted || false,
   };
 }
 
@@ -37,7 +37,7 @@ async function checkNftSecurity(nftContractAddress, tokenId) {
 
     const apiKey = 'your-opensea-api-key';
     const url = `https://api.opensea.io/api/v1/asset/${nftContractAddress}/${tokenId}/?api_key=${apiKey}`;
-    const response = await fetch(url);
+    const response = await axios.get(url);
     const openseaData = await response.json();
     
     console.log(openseaData)
@@ -162,4 +162,4 @@ async function checkImageMalware(url) {
 
 
 
-export { checkSiteSecurity, checkNftSecurity };
+module.exports = { checkSiteSecurity, checkNftSecurity };
