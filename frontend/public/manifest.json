@@ -1,0 +1,25 @@
+{
+  "name": "NFT Defender",
+  "version": "1.0",
+  "manifest_version": 2,
+  "description": "Checks the security of NFTs on Opensea",
+  "default_popup": "index.html",
+  "browser_action": {
+    "default_popup": "index.html",
+    "default_icon": {
+      "48": "icon48.png"
+    }
+  },
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "storage",
+    "https://*/*",
+     "http://*/*", 
+     "contextMenus"
+  ],
+  "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
+  "icons": {
+    "48": "icon48.png"
+  }
+}
