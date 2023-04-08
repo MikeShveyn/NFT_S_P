@@ -60,9 +60,14 @@ export const CheckNftSecurity = () => {
         const [tokenId, setTokenId] = useState('');
       
         const extractNftDataFromUrl = async (tab) => {
+
+          console.log('PATH MATCH check start: ', tab)
+
           const url = new URL(tab.url);
-          const pathMatch = url.pathname.match(/\/assets\/(0x[a-fA-F0-9]{40})\/(\d+)/);
-      
+          const pathMatch = url.pathname.match(/\/assets\/(?:matic\/)?([^\/]+)\/(\d+)/);
+          
+          console.log('PATH MATCH check end: ', pathMatch)
+
           if (pathMatch) {
             setContractAddress(pathMatch[1]);
             setTokenId(pathMatch[2]);

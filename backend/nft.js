@@ -2,12 +2,16 @@ const ethers = require('ethers');
 const axios = require('axios');
 
 const urlScanApiKey = '24e8d9c4-5419-4a2d-b258-d5613f8015e6';
+const nftPortApiKey = '145566cf-dda7-4b7f-ab74-bbd336ed6377';
+
+
+// --------------------------SITE SECURITY---------------------------------------
 
 async function checkSiteSecurity(ssl, fullUrl) {
    // Check if site has SSL
    const hasSsl = ssl === "https:";
   
-    
+     
   const mallware = await scanUrlForMalware(fullUrl)
 
   return {
@@ -15,6 +19,85 @@ async function checkSiteSecurity(ssl, fullUrl) {
     mallware: mallware
   };
 }
+
+// -----------------------------Nft Security--------------------------------------
+
+async function checkNftSecurity(contractAddress, tokenId) {
+  const nftData = await getNftData(contractAddress, tokenId);
+  let hasMallware = false;
+  let checkHistory = true;
+
+  if (!nftData) {
+    console.error('Failed to fetch NFT data');
+  }else{
+    console.log('NFT Data:', nftData);
+
+    // Check NFT history
+    console.log('NFT History:', nftData.transfer_history);
+  
+    // Check for metadata duplication
+    // This can be done by comparing the metadata's hash with other NFTs, but NFTPort does not provide this functionality.
+  
+    // Scan image file for malware
+    const imageUrl = nftData.metadata.image;
+    hasMallware = await scanImageUrlForMalware(imageUrl);
+  
+  }
+
+ 
+  return {
+    checkHistory: checkHistory || true,
+    isMalware: hasMallware || false,
+  };
+}
+
+// ---------------------------------Common logic---------------------------------
+function nftApiCall(nftPortApiUrl) {
+    return axios.get(
+      nftPortApiUrl,
+      {
+        headers: {
+          accept: 'application/json',
+          Authorization: nftPortApiKey,
+        },
+      }
+      );
+  
+}
+
+function getNftPortApiUrl(chain, contractAddress, tokenId) {
+  `https://api.nftport.xyz/v0/nfts/${contractAddress}/${tokenId}?chain=${chain}&refresh_metadata=false`;
+}
+
+
+async function getNftData(contractAddress, tokenId) {
+  const networks = ['ethereum', 'polygon', 'goerli'];
+  let success = false;
+  let result = null;
+
+  do {
+    try {
+      const network = networks.shift();
+      const response = await nftApiCall(getNftPortApiUrl(network, contractAddress, tokenId));
+      result = response.data;
+      success = true;
+    } catch (error) {
+      if (error.code === 'not_found' && networks.length > 0) {
+        console.log('Try to fetch with another network...');
+      } else {
+        console.error(`Error fetching NFT data: ${error.message}`);
+        return null;
+      }
+    }
+  } while (!success && networks.length > 0);
+
+  if (!success) {
+    console.error('No networks left to try');
+  }
+
+  return result;
+}
+
 
 async function scanUrlForMalware(url) {
   const urlScanApiUrl = 'https://urlscan.io/api/v1/scan/';
@@ -78,39 +161,6 @@ async function scanUrlForMalware(url) {
 }
 
 
-
-// ------------------------------------------------------------------------------
-
-async function checkNftSecurity(nftContractAddress, tokenId) {
-  // Get NFT metadata
-    // Fetch NFT metadata using an appropriate API or service
-    // For example, you can use OpenSea API: https://docs.opensea.io/reference
-
-    const apiKey = 'your-opensea-api-key';
-    const url = `https://api.opensea.io/api/v1/asset/${nftContractAddress}/${tokenId}/?api_key=${apiKey}`;
-    const response = await axios.get(url);
-    const openseaData = await response.json();
-    
-    console.log(openseaData)
-
-    // cehck history and ownership
-    // const checkHistory = checkHashHistory(openseaData)
-
-    // todo duplicated image check ? 
-    // checkDuplicatedImage()
-
-   // Check if image contains malware
-   // const isMalware = await checkImageMalware(metadataJson.image);
-
-   // Return NFT security check results
-  return {
-    checkHistory: checkHistory || true,
-    isMalware: isMalware || false,
-  };
-}
-
-
-
 async function checkHashHistory(openseaData) {
   try {
     // Get the contract instance
@@ -135,8 +185,6 @@ async function checkHashHistory(openseaData) {
     return false;
   }
 };
-
-
 
 async function checkDuplicatedImage (imageUrl) {
     //https://services.tineye.com/TinEye/api/pricing. check
@@ -166,17 +214,6 @@ async function checkDuplicatedImage (imageUrl) {
     return false;
   }
 };
-
-
-
-async function checkImageMalware(imageUrl) {
-     // Check if the image contains malware using an appropriate API or service
-    // You may need to use a third-party malware scanning service
-    // Return true if the image is clean, otherwise return false
-  
-
-
-}
 
 
 module.exports = { checkSiteSecurity, checkNftSecurity };

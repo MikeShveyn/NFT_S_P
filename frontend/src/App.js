@@ -6,8 +6,8 @@ function App() {
   return (
     <div className="main-contaiener">
       <h1>NFT DEFENDER</h1>
-      <CheckSiteSecurity/>
-      {/* <CheckNftSecurity/> */}
+      {/* <CheckSiteSecurity/> */}
+      <CheckNftSecurity/>
     </div>
   )
 }
