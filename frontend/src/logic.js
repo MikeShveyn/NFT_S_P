@@ -1,17 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export const CheckSiteSecurity = () => {
   const [siteStatus, setSiteStatus] = useState('');
 
-  const performSecurityChecks = async () => {
-    const response = await fetch('http://localhost:4001/checkSiteSecurity');
+  const performSecurityChecks = async (url) => {
+    const response = await fetch(`http://localhost:4001/checkSiteSecurity?url=${url}`);
     const data = await response.json();
     setSiteStatus(data.isSecure ? 'Site is secure.' : 'Site is not secure.');
   };
 
+  useEffect(() => {
+    const getCurrentTab = async () => {
+      const currentTab = await new Promise((resolve) => {
+        chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+          resolve(tab);
+        });
+      });
+      console.log('current tab ', currentTab)
+      performSecurityChecks(currentTab.url)
+    };
+
+    getCurrentTab();
+
+    const handleTabUpdated = (tabId, changeInfo, tab) => {
+      if (tab.active && changeInfo.url) {
+         performSecurityChecks(tab.url)
+      }
+    };
+
+    chrome.tabs.onUpdated.addListener(handleTabUpdated);
+
+    return () => {
+      chrome.tabs.onUpdated.removeListener(handleTabUpdated);
+    };
+  }, []);
+
   return (
-    <div>
-      <button onClick={performSecurityChecks}>Check Site Security</button>
+    <div className='check-stite-security'>
+       <h2>Site Status</h2>
       <p>{siteStatus}</p>
     </div>
   );
@@ -78,7 +104,7 @@ export const CheckNftSecurity = () => {
         };
       
         return (
-          <div>
+          <div className='check-nft-security'>
             <p>Contract Address: {contractAddress}</p>
             <p>Token ID: {tokenId}</p>
             <button onClick={performNftSecurityChecks}>Check NFT Security</button>

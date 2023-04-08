@@ -1,34 +1,85 @@
 const ethers = require('ethers');
 const axios = require('axios');
 
-async function checkSiteSecurity(domain, ssl) {
+const urlScanApiKey = '24e8d9c4-5419-4a2d-b258-d5613f8015e6';
+
+async function checkSiteSecurity(ssl, fullUrl) {
    // Check if site has SSL
    const hasSsl = ssl === "https:";
-   let isReal = true;
-   let isBlacklisted = false;
-  //https://developers.virustotal.com/reference/overview
-  // isReal = await axios({
-  //   url: `https://isitarealemail.com/api/email/validate`,
-  //   method: "post",
-  //   body: JSON.stringify({ email: domain }),
-  //   headers: { "Content-Type": "application/json" },
-  // }).then((res) => res.json());
-
-  // Check if site is blacklisted
-  // isBlacklisted = await axios(`https://my-blacklist-api.com/check?domain=${domain}`)
-  //   .then((res) => res.json())
-  //   .then((data) => data.isBlacklisted);
+  
+    
+  const mallware = await scanUrlForMalware(fullUrl)
 
   return {
-    domain: domain,
-    isReal: isReal?.data?.isReal || true,
     hasSsl: hasSsl,
-    isBlacklisted: isBlacklisted || false,
+    mallware: mallware
   };
 }
 
+async function scanUrlForMalware(url) {
+  const urlScanApiUrl = 'https://urlscan.io/api/v1/scan/';
 
-//
+  try {
+    const response = await axios.post(
+      urlScanApiUrl,
+      {
+        url,
+        public: 'on',
+      },
+      {
+        headers: {
+          'API-Key': urlScanApiKey,
+        },
+      }
+    );
+
+
+    const scanId = response.data.uuid;
+    console.log(`Scan initiated. Scan ID: ${scanId}`);
+  
+    console.log('Waiting for the scan to complete...');
+    let scanComplete = false;
+  
+    while (!scanComplete) {
+      await new Promise((resolve) => setTimeout(resolve, 5000)); // Poll every 5 seconds
+  
+      const scanResultUrl = `https://urlscan.io/api/v1/result/${scanId}/`;
+  
+      try {
+        const scanResult = await axios.get(scanResultUrl);
+  
+        scanComplete = true;
+  
+        // Process the scan results as before
+        // console.log(scanResult)
+
+        const malicious = scanResult.data.verdicts.overall.malicious;
+       
+        if (malicious) {
+          console.log(`URL: ${url} is not safe`);
+        } else {
+          console.log(`URL: ${url} is safe`);
+        }
+
+        return malicious;
+  
+      } catch (error) {
+        if (error.response && error.response.status === 404) {
+          console.log('Scan still in progress...');
+        } else {
+          console.error(`Error checking URL safety: ${error.message}`);
+          break;
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`Error checking URL safety: ${error.message}`);
+  }
+}
+
+
+
+// ------------------------------------------------------------------------------
 
 async function checkNftSecurity(nftContractAddress, tokenId) {
   // Get NFT metadata
@@ -118,48 +169,14 @@ async function checkDuplicatedImage (imageUrl) {
 
 
 
-async function checkImageMalware(url) {
+async function checkImageMalware(imageUrl) {
      // Check if the image contains malware using an appropriate API or service
     // You may need to use a third-party malware scanning service
     // Return true if the image is clean, otherwise return false
-   // https://developers.virustotal.com/reference#getting-started.
-   try {
-    const virustotalUrl = 'https://www.virustotal.com/api/v3/urls';
-    const headers = {
-      'x-apikey': 'YOUR_VIRUSTOTAL_API_KEY',
-    };
-    
+  
 
-    // Submit the URL for analysis
-    const submitResponse = await axios.post(virustotalUrl, { url: imageUrl }, { headers });
-    const id = submitResponse.data.data.id;
-
-    // Wait for the analysis to complete (use a delay or polling)
-    await new Promise((resolve) => setTimeout(resolve, 15000));
-
-    // Get the analysis results
-    const analysisUrl = `https://www.virustotal.com/api/v3/analyses/${id}`;
-    const analysisResponse = await axios.get(analysisUrl, { headers });
-    const analysisData = analysisResponse.data;
-
-    // Check if any engines detected malware
-    const engines = analysisData.data.attributes.results;
-    const malwareDetected = Object.values(engines).some((engine) => engine.category === 'malicious');
-
-    if (malwareDetected) {
-      return false; // Image contains malware
-    } else {
-      return true; // Image is clean
-    }
-  } catch (error) {
-    console.error('Error in checkMalware:', error);
-    return false;
-  }
 
 }
-
-
-
 
 
 module.exports = { checkSiteSecurity, checkNftSecurity };

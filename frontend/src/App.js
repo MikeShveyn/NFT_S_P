@@ -4,7 +4,8 @@ import {CheckNftSecurity, CheckSiteSecurity}  from "./logic";
 
 function App() {
   return (
-    <div>
+    <div className="main-contaiener">
+      <h1>NFT DEFENDER</h1>
       <CheckSiteSecurity/>
       {/* <CheckNftSecurity/> */}
     </div>

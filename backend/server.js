@@ -7,11 +7,13 @@ const app = express();
 app.use(cors());
 
 app.get('/checkSiteSecurity', async (req, res) => {
+  const {url} = req.query;
   // Implement checkSiteSecurity logic here
-  const {protocol, host} = getFormattedUrl(req);
-  const result = await checkSiteSecurity(host, protocol)
+  console.log('URL TO BEC CHECKED: ', url)
+  const {protocol} = getFormattedUrl(url);
+  const result = await checkSiteSecurity(protocol, url)
   console.log(result)
-  res.json({ isSecure: result.isReal && result.hasSsl && !result.isBlacklisted }); // Replace with actual result
+  res.json({ isSecure: !result.mallware && result.hasSsl }); // Replace with actual result
 });
 
 app.get('/checkNftSecurity', async (req, res) => {
@@ -34,9 +36,10 @@ app.listen(PORT, () => {
 });
 
 
-function getFormattedUrl(req) {
+function getFormattedUrl(url) {
+  const myUrl = new URL(url);
   return {
-      protocol: req.protocol,
-      host: req.get('host')
-  };
+    protocol: myUrl.protocol,
+    host: myUrl.hostname
+  }
 }
