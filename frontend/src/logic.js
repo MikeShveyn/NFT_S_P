@@ -2,57 +2,41 @@ import React, { useState, useEffect } from 'react';
 
 export const CheckSiteSecurity = () => {
   const [siteStatus, setSiteStatus] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const performSecurityChecks = async (url) => {
+    setLoading(true);
     const response = await fetch(`http://localhost:4001/checkSiteSecurity?url=${url}`);
     const data = await response.json();
     setSiteStatus(data.isSecure ? 'Site is secure.' : 'Site is not secure.');
+    setLoading(false);
   };
 
-  useEffect(() => {
-    const getCurrentTab = async () => {
-      const currentTab = await new Promise((resolve) => {
-        chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
-          resolve(tab);
-        });
+  const handleButtonClick = async () => {
+    const currentTab = await new Promise((resolve) => {
+      chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+        resolve(tab);
       });
-      console.log('current tab ', currentTab)
-      performSecurityChecks(currentTab.url)
-    };
-
-    getCurrentTab();
-
-    const handleTabUpdated = (tabId, changeInfo, tab) => {
-      if (tab.active && changeInfo.url) {
-         performSecurityChecks(tab.url)
-      }
-    };
-
-    chrome.tabs.onUpdated.addListener(handleTabUpdated);
-
-    return () => {
-      chrome.tabs.onUpdated.removeListener(handleTabUpdated);
-    };
-  }, []);
+    });
+    console.log('current tab ', currentTab);
+    performSecurityChecks(currentTab.url);
+  };
 
   return (
-    <div className='check-stite-security'>
-       <h2>Site Status</h2>
-      <p>{siteStatus}</p>
+    <div className='check-site-security'>
+      <h2>Site Status</h2>
+      {loading ? (
+        <p>Checking site security, please wait...</p>
+      ) : (
+        <p>{siteStatus}</p>
+      )}
+      <button onClick={handleButtonClick} disabled={loading}>
+        Check Site Security
+      </button>
     </div>
   );
 };
 
-
-/**
- * 
-    Now, you can test your extension using a real example from OpenSea:
-
-    1 Find an NFT on OpenSea, and copy its contract address and token ID.
-    2 Run your extension and enter the contract address and token ID in the input fields.
-    3 Click the "Check NFT Security" button to perform the security checks.
- */
- 
 
 export const CheckNftSecurity = () => {
         const [nftStatus, setNftStatus] = useState('');
@@ -64,13 +48,13 @@ export const CheckNftSecurity = () => {
           console.log('PATH MATCH check start: ', tab)
 
           const url = new URL(tab.url);
-          const pathMatch = url.pathname.match(/\/assets\/(?:matic\/)?([^\/]+)\/(\d+)/);
+          const pathMatch = url.pathname.match(/\/assets\/([^\/]+\/)?([^\/]+)\/(\d+)/);
           
           console.log('PATH MATCH check end: ', pathMatch)
 
           if (pathMatch) {
-            setContractAddress(pathMatch[1]);
-            setTokenId(pathMatch[2]);
+            setContractAddress(pathMatch[2]);
+            setTokenId(pathMatch[3]);
           } else {
             setContractAddress('');
             setTokenId('');

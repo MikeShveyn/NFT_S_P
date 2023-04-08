@@ -33,14 +33,14 @@ async function checkNftSecurity(contractAddress, tokenId) {
     console.log('NFT Data:', nftData);
 
     // Check NFT history
-    console.log('NFT History:', nftData.transfer_history);
+     
   
     // Check for metadata duplication
     // This can be done by comparing the metadata's hash with other NFTs, but NFTPort does not provide this functionality.
   
     // Scan image file for malware
-    const imageUrl = nftData.metadata.image;
-    hasMallware = await scanImageUrlForMalware(imageUrl);
+    //const imageUrl = nftData.metadata.image;
+    //hasMallware = await scanImageUrlForMalware(nftData.file_url);
   
   }
 
@@ -52,21 +52,24 @@ async function checkNftSecurity(contractAddress, tokenId) {
 }
 
 // ---------------------------------Common logic---------------------------------
-function nftApiCall(nftPortApiUrl) {
-    return axios.get(
-      nftPortApiUrl,
-      {
-        headers: {
-          accept: 'application/json',
-          Authorization: nftPortApiKey,
-        },
-      }
-      );
-  
+function nftApiCall(nftPortApiUrl, network) {
+
+  const options = {
+    method: 'GET',
+    url: nftPortApiUrl,
+    params: {chain: network, refresh_metadata: 'false'},
+    headers: {
+      accept: 'application/json',
+      Authorization: nftPortApiKey
+    }
+  };
+
+  return axios.request(options);
 }
 
-function getNftPortApiUrl(chain, contractAddress, tokenId) {
-  `https://api.nftport.xyz/v0/nfts/${contractAddress}/${tokenId}?chain=${chain}&refresh_metadata=false`;
+
+function getNftPortApiUrl(contractAddress, tokenId) {
+  return `https://api.nftport.xyz/v0/nfts/${contractAddress}/${tokenId}`;
 }
 
 
@@ -74,15 +77,17 @@ async function getNftData(contractAddress, tokenId) {
   const networks = ['ethereum', 'polygon', 'goerli'];
   let success = false;
   let result = null;
-
+  const url = getNftPortApiUrl(contractAddress, tokenId);
   do {
     try {
+      console.log(url)
       const network = networks.shift();
-      const response = await nftApiCall(getNftPortApiUrl(network, contractAddress, tokenId));
+      console.log(network)
+      const response = await nftApiCall(url, network);
       result = response.data;
       success = true;
     } catch (error) {
-      if (error.code === 'not_found' && networks.length > 0) {
+      if (error.response && error.response.statusText === 'Not Found') {
         console.log('Try to fetch with another network...');
       } else {
         console.error(`Error fetching NFT data: ${error.message}`);
