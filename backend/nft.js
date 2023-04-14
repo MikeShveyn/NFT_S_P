@@ -25,28 +25,23 @@ async function checkSiteSecurity(ssl, fullUrl) {
 async function checkNftSecurity(contractAddress, tokenId) {
   const nftData = await getNftData(contractAddress, tokenId);
   let hasMallware = false;
-  let checkHistory = true;
+  let isDuplicated = false;
 
   if (!nftData) {
     console.error('Failed to fetch NFT data');
+    hasMallware = true;
   }else{
     console.log('NFT Data:', nftData);
 
-    // Check NFT history
-     
-  
     // Check for metadata duplication
     // This can be done by comparing the metadata's hash with other NFTs, but NFTPort does not provide this functionality.
   
     // Scan image file for malware
-    //const imageUrl = nftData.metadata.image;
-    //hasMallware = await scanImageUrlForMalware(nftData.file_url);
-  
+    hasMallware = await checkNftDataForMallware(nftData);
   }
 
- 
   return {
-    checkHistory: checkHistory || true,
+    idDuplicated: isDuplicated || false,
     isMalware: hasMallware || false,
   };
 }
@@ -67,11 +62,9 @@ function nftApiCall(nftPortApiUrl, network) {
   return axios.request(options);
 }
 
-
 function getNftPortApiUrl(contractAddress, tokenId) {
   return `https://api.nftport.xyz/v0/nfts/${contractAddress}/${tokenId}`;
 }
-
 
 async function getNftData(contractAddress, tokenId) {
   const networks = ['ethereum', 'polygon', 'goerli'];
@@ -103,10 +96,9 @@ async function getNftData(contractAddress, tokenId) {
   return result;
 }
 
-
 async function scanUrlForMalware(url) {
   const urlScanApiUrl = 'https://urlscan.io/api/v1/scan/';
-
+  console.log('Url to scan ', url)
   try {
     const response = await axios.post(
       urlScanApiUrl,
@@ -166,30 +158,42 @@ async function scanUrlForMalware(url) {
 }
 
 
-async function checkHashHistory(openseaData) {
+function ipfsToHttpUrl(ipfsUrl) {
+  return ipfsUrl.replace('ipfs://', 'https://ipfs.infura.io/ipfs/');
+}
+
+
+async function checkNftDataForMallware(nftData) {
   try {
-    // Get the contract instance
-    // todo add API
-    const infura_api = '';
-    const provider = new ethers.providers.JsonRpcProvider('https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID');
-    const contract = new ethers.Contract(nftContractAddress, ['function ownerOf(uint256 tokenId) view returns (address)'], provider);
-
-    // Get the current owner
-    const currentOwner = await contract.ownerOf(tokenId);
-
-    // Check if the NFT owner from OpenSea API matches the owner from the blockchain
-    if (openseaData.owner.address.toLowerCase() !== currentOwner.toLowerCase()) {
-      return false;
+    const urlsToScan = [
+      nftData.nft?.metadata_url ? ipfsToHttpUrl(nftData.nft.metadata_url) : null ,
+      nftData.nft?.metadata?.image ? ipfsToHttpUrl(nftData.nft.metadata?.image) : null,
+      nftData.nft?.file_url ? ipfsToHttpUrl(nftData.nft.file_url) : null,
+      nftData.nft?.cached_file_url ? ipfsToHttpUrl(nftData.nft.cached_file_url) : null,
+    ].filter(url => url !== undefined && url !== null); // Filter out undefined or null values
+    
+     // If there's nothing to scan, consider the NFT not secure
+     if (urlsToScan.length === 0) {
+      return true;
+    }
+  
+    const scanResults = await Promise.all(urlsToScan.map(url => scanUrlForMalware(url)));
+      // Analyze the scan results and return security status
+    if(scanResults && scanResults.length > 0) {
+      scanResults.every(result => {
+        if(result && result.malicious) {
+          return true;
+        }
+      });
     }
 
-    // Add any additional checks for the hash history here
-
-    return true;
+    return false;
   } catch (error) {
-    console.error('Error in checkHashHistory:', error);
+    console.error('Error while checkNftDataForMallware ', error)
     return false;
   }
-};
+ 
+}
 
 async function checkDuplicatedImage (imageUrl) {
     //https://services.tineye.com/TinEye/api/pricing. check

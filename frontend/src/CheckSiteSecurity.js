@@ -38,8 +38,17 @@ export const CheckSiteSecurity = () => {
         const data = await response.json();
         const status = data.isSecure ? 'Site is secure.' : 'Site is not secure.';
         setSiteStatus(status);
+
+        // Add or Remove injected banner into webpage
+        if (data.isSecure) {
+          chrome.tabs.sendMessage(tabId, { action: 'removeWarning' });
+        } else {
+          chrome.tabs.sendMessage(tabId, { action: 'injectWarning' });
+        }
+
         // Store siteStatus
         chrome.storage.local.set({ [`siteStatus_${tabId}`]: status });
+
     }catch(e) {
         console.error('Error while perfoem security check ' ,e)
     }finally{

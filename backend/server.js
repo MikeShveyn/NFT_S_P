@@ -27,7 +27,7 @@ app.get('/checkNftSecurity', async (req, res) => {
 
     const result = await checkNftSecurity(contractAddress , tokenId)
     console.log(result)
-    res.json({ isSecure: result.checkHistory && !result.isMalware });
+    res.json({ isSecure: !result.isDuplicated && !result.isMalware });
   });
 
 
