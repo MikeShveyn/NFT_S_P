@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
-import {CheckNftSecurity, CheckSiteSecurity}  from "./logic";
-
+import React from "react";
+import { CheckNftSecurity } from "./CheckNftSecurity";
+import { CheckSiteSecurity } from "./CheckSiteSecurity";
+import "./App.css"
 
 function App() {
   return (
