@@ -3,6 +3,7 @@ const axios = require('axios');
 
 const urlScanApiKey = '24e8d9c4-5419-4a2d-b258-d5613f8015e6';
 const nftPortApiKey = '145566cf-dda7-4b7f-ab74-bbd336ed6377';
+const etherscanApiKey = 'W5FKNHAJ87DX32TIF71QNXUIUAY5B7TAHF';
 
 
 // --------------------------SITE SECURITY---------------------------------------
@@ -22,7 +23,7 @@ async function checkSiteSecurity(ssl, fullUrl) {
 // -----------------------------Nft Security--------------------------------------
 
 async function checkNftSecurity(contractAddress, tokenId) {
-  const nftData = await getNftData(contractAddress, tokenId);
+  //const nftData = await getNftData(contractAddress, tokenId);
   let hasMallware = false;
   let isDuplicated = false;
 
@@ -36,16 +37,20 @@ async function checkNftSecurity(contractAddress, tokenId) {
     // This can be done by comparing the metadata's hash with other NFTs, but NFTPort does not provide this functionality.
   
     // Scan image file for malware
-    hasMallware = await checkNftDataForMallware(nftData);
-  }
 
+    hasMallware = await checkNftDataForMallware(nftData);
+    
+    await analyzeNftCreator(contractAddress, tokenId)
+   
   return {
     idDuplicated: isDuplicated || false,
     isMalware: hasMallware || false,
   };
 }
 
-// ---------------------------------Common logic---------------------------------
+
+// ------------------------------ GET NFT DATA WITH NFT PORT API ---------------------------------
+
 function nftApiCall(nftPortApiUrl, network) {
 
   const options = {
@@ -94,6 +99,8 @@ async function getNftData(contractAddress, tokenId) {
 
   return result;
 }
+
+// --------------------------------- CHECK DATA FOR MALLWARE USIN URL SCAN ---------------------------------
 
 async function scanUrlForMalware(url) {
   const urlScanApiUrl = 'https://urlscan.io/api/v1/scan/';
@@ -156,11 +163,9 @@ async function scanUrlForMalware(url) {
   }
 }
 
-
 function ipfsToHttpUrl(ipfsUrl) {
   return ipfsUrl.replace('ipfs://', 'https://ipfs.infura.io/ipfs/');
 }
-
 
 async function checkNftDataForMallware(nftData) {
   try {
@@ -194,34 +199,72 @@ async function checkNftDataForMallware(nftData) {
  
 }
 
-async function checkDuplicatedImage (imageUrl) {
-    //https://services.tineye.com/TinEye/api/pricing. check
+// ************************************ analyzeNftCreator AND HELEPR FUNCTIONS WORKS WITH ETHER API **************************************
+async function analyzeNftCreator(contractAddress, tokenId) {
+  const creatorAndTransaction = await getNftCreatorAndTransactionHash(contractAddress, tokenId);
+  const creatorAddress = creatorAndTransaction.creatorAddress;
+  const transactionHash = creatorAndTransaction.transactionHash;
+
+  const creatorTransactionCount = await getTransactionCount(creatorAddress);
+  const transactionDetails = await getTransactionDetails(transactionHash);
+
+  console.log(`Creator address: ${creatorAddress}`);
+  console.log(`Transaction hash: ${transactionHash}`);
+  console.log(`Creator transaction count: ${creatorTransactionCount}`);
+  console.log(`Transaction details:`, transactionDetails);
+}
+
+async function getNftCreatorAndTransactionHash(contractAddress, tokenId) {
+  const apiUrl = `https://api.etherscan.io/api?module=account&action=tokennfttx&contractaddress=${contractAddress}&startblock=0&endblock=999999999&sort=asc&apikey=${etherscanApiKey}`;
+
   try {
-    const tineyeUrl = 'https://api.tineye.com/rest/search/';
-    const params = {
-      url: imageUrl,
-      api_key: 'YOUR_TINEYE_API_KEY',
-    };
+    const response = await axios.get(apiUrl);
+    const transactions = response.data.result;
+    const nftTransaction = transactions.find(tx => tx.tokenID === tokenId);
 
-    const response = await axios.post(tineyeUrl, null, { params });
-    const data = response.data;
-
-    // Check the number of matches found
-    const matchCount = data.result.total_results;
-
-    // Set a threshold for matches to consider the image as duplicated
-    const duplicateThreshold = 5;
-
-    if (matchCount > duplicateThreshold) {
-      return false; // Image is duplicated
+    if (nftTransaction) {
+      return {
+        creatorAddress: nftTransaction.from,
+        transactionHash: nftTransaction.hash,
+      };
     } else {
-      return true; // Image is not duplicated
+      console.error(`Could not find transaction for token ID: ${tokenId}`);
+      return null;
     }
   } catch (error) {
-    console.error('Error in checkDuplicatedImage:', error);
-    return false;
+    console.error(`Error fetching NFT transaction data: ${error.message}`);
+    return null;
   }
-};
+}
+
+async function getTransactionCount(address) {
+  const response = await axios.get(`https://api.etherscan.io/api`, {
+    params: {
+      module: 'account',
+      action: 'txlist',
+      address: address,
+      startblock: 0,
+      endblock: 99999999,
+      sort: 'asc',
+      apikey: etherscanApiKey
+    }
+  });
+
+  return response.data.result.length;
+}
+
+async function getTransactionDetails(transactionHash) {
+  const response = await axios.get(`https://api.etherscan.io/api`, {
+    params: {
+      module: 'proxy',
+      action: 'eth_getTransactionByHash',
+      txhash: transactionHash,
+      apikey: etherscanApiKey
+    }
+  });
+
+  return response.data.result;
+}
 
 
 module.exports = { checkSiteSecurity, checkNftSecurity };
