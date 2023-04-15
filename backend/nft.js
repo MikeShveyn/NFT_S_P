@@ -8,10 +8,9 @@ const nftPortApiKey = '145566cf-dda7-4b7f-ab74-bbd336ed6377';
 // --------------------------SITE SECURITY---------------------------------------
 
 async function checkSiteSecurity(ssl, fullUrl) {
-   // Check if site has SSL
-   const hasSsl = ssl === "https:";
+  // Check if site has SSL
+  const hasSsl = ssl === "https:";
   
-     
   const mallware = await scanUrlForMalware(fullUrl)
 
   return {

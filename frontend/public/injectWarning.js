@@ -1,21 +1,21 @@
-function createWarningBanner() {
+function createWarningBanner(color, text) {
   const banner = document.createElement('div');
   banner.id = 'extension-warning-banner';
   banner.style.position = 'fixed';
   banner.style.top = '0';
   banner.style.left = '0';
   banner.style.width = '100%';
-  banner.style.backgroundColor = 'red';
+  banner.style.backgroundColor = color;
   banner.style.color = 'white';
   banner.style.zIndex = '99999';
   banner.style.textAlign = 'center';
   banner.style.padding = '10px';
-  banner.innerText = 'Warning: This website may contain malware. It is recommended to disable other extensions or avoid visiting this website.';
+  banner.innerText = text;
   return banner;
 }
 
-function injectWarningBanner() {
-  const banner = createWarningBanner();
+function injectWarningBanner(color, text) {
+  const banner = createWarningBanner(color, text);
   document.body.prepend(banner);
 }
 
@@ -26,14 +26,19 @@ function removeWarningBanner() {
   }
 }
 
-console.log('I am alive !!!!')
+console.log('I am alive !!!!')  
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'injectWarning') {
-    injectWarningBanner();
-  } else if (message.action === 'removeWarning') {
-    injectWarningBanner(); // tests
-    //removeWarningBanner();
+    removeWarningBanner()
+    const color = message.secure ? '#54B435' : 'red'
+    const text = message.secure 
+    ? 'This website is secure. More information can be found inside extention.'
+    : 'Warning: This website may contain malware. It is recommended to disable other extensions or avoid visiting this website.'
+    injectWarningBanner(color, text);
+  } else if(message.action === 'firstWarning') {
+    removeWarningBanner()
+    this.injectWarningBanner('#537FE7', 'We perform security check... Please do not perform any actions till we have full report.')
   }
 });
 

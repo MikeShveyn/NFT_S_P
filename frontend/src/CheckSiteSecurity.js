@@ -19,13 +19,14 @@ export const CheckSiteSecurity = () => {
   useEffect(() => {
     const fetchStoredStatus = async () => {
       const currentTab = await getCurrentTab();
-
       // Retrieve stored siteStatus for the current tab
       chrome.storage.local.get(`siteStatus_${currentTab.id}`, (data) => {
         if (data[`siteStatus_${currentTab.id}`]) {
           setSiteStatus(data[`siteStatus_${currentTab.id}`]);
         }
       });
+      
+      performSecurityChecks(currentTab.url, currentTab.id);
     };
 
     fetchStoredStatus();
@@ -34,18 +35,15 @@ export const CheckSiteSecurity = () => {
   const performSecurityChecks = async (url, tabId) => {
     try {
         setLoading(true);
+        chrome.tabs.sendMessage(tabId, { action: 'firstWarning'});
         const response = await fetch(`http://localhost:4001/checkSiteSecurity?url=${url}`);
         const data = await response.json();
         const status = data.isSecure ? 'Site is secure.' : 'Site is not secure.';
         setSiteStatus(status);
 
-        // Add or Remove injected banner into webpage
-        if (data.isSecure) {
-          chrome.tabs.sendMessage(tabId, { action: 'removeWarning' });
-        } else {
-          chrome.tabs.sendMessage(tabId, { action: 'injectWarning' });
-        }
-
+        // Add injected banner into webpage
+        chrome.tabs.sendMessage(tabId, { action: 'injectWarning' , secure: data.isSecure});
+       
         // Store siteStatus
         chrome.storage.local.set({ [`siteStatus_${tabId}`]: status });
 
