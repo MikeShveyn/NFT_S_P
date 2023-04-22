@@ -1,10 +1,11 @@
 body {
-  width: 500px;
-  height: 400px;
+  width: 420px;
+  height: 500px;
   margin: 0;
   font-family: 'Roboto', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  border-radius: 10px;
 }
 
 /* code {
@@ -17,3 +18,11 @@ p {
   margin: 0;
   padding: 0;
 }
+
+.in-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+

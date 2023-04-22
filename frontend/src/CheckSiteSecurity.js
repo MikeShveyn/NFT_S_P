@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import "./CheckSiteSecurity.css"
 import Button from '@mui/material/Button';
 import LinearProgress from '@mui/material/LinearProgress';
-
+import Stack from '@mui/material/Stack';
+import Alert from '@mui/material/Alert';
 
 export const CheckSiteSecurity = () => {
-  const [siteStatus, setSiteStatus] = useState('');
+  const [siteStatus, setSiteStatus] = useState('warning'); // warning error success
+  const [siteInfo, setSiteInfo] = useState('check status');
   const [loading, setLoading] = useState(false);
 
   const getCurrentTab = async () => {
@@ -38,8 +40,10 @@ export const CheckSiteSecurity = () => {
         chrome.tabs.sendMessage(tabId, { action: 'firstWarning'});
         const response = await fetch(`http://localhost:4001/checkSiteSecurity?url=${url}`);
         const data = await response.json();
-        const status = data.isSecure ? 'Site is secure.' : 'Site is not secure.';
+        const status = data.isSecure ? 'success' : 'error';
+        const info =  data.isSecure ? 'Site is secure' : 'Site is suspisios';
         setSiteStatus(status);
+        setSiteInfo(info);
 
         // Add injected banner into webpage
         chrome.tabs.sendMessage(tabId, { action: 'injectWarning' , secure: data.isSecure});
@@ -64,7 +68,14 @@ export const CheckSiteSecurity = () => {
 
   return (
     <div className='check-site-security'>
-      <h2>Site Status</h2>
+      <div className='in-header'>
+        <h2>Site Status</h2>
+        <Alert severity={siteStatus}>
+            {siteInfo}
+          </Alert>
+      </div>
+     
+  
       {loading ? (
         <div class="result-security">
           <p>Checking site security, please wait...</p>
@@ -72,7 +83,7 @@ export const CheckSiteSecurity = () => {
         </div>
       ) : (
         <div class="result-security">
-          <p>{siteStatus}</p>
+          <p>{siteInfo}</p>
         </div>
       )}
       <Button 
