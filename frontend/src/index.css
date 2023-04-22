@@ -26,3 +26,13 @@ p {
   justify-content: space-between;
 }
 
+.allertMe {
+  padding: 0px 8px !important;
+  width: 160px;
+}
+
+.css-1lpukdo.Mui-disabled {
+  opacity: 0.5 !important;
+  color: rgb(255, 255, 255) !important;
+  background-color: rgb(25, 118, 210) !important;
+}

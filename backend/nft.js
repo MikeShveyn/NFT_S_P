@@ -1,6 +1,4 @@
-const ethers = require('ethers');
 const axios = require('axios');
-
 const urlScanApiKey = '24e8d9c4-5419-4a2d-b258-d5613f8015e6';
 const nftPortApiKey = '145566cf-dda7-4b7f-ab74-bbd336ed6377';
 const etherscanApiKey = 'W5FKNHAJ87DX32TIF71QNXUIUAY5B7TAHF';
@@ -14,18 +12,33 @@ async function checkSiteSecurity(ssl, fullUrl) {
   
   const mallware = await scanUrlForMalware(fullUrl)
 
+  let info = '';
+  
+  if(!hasSsl && mallware) {
+      info = `Site ${fullUrl} has no valid ssl and contain mallware.`
+  }
+  else if(!hasSsl && !mallware) {
+      info = `Site ${fullUrl} has no valid ssl but do not contain mallware.`
+  }
+  else if(hasSsl && mallware) {
+      info = `Site ${fullUrl} has valid ssl but contain mallware.`
+  }
+  else{
+    info = `Site ${fullUrl} has valid ssl and not contain mallware.`
+  }
+
   return {
     hasSsl: hasSsl,
-    mallware: mallware
+    mallware: mallware,
+    info: info
   };
 }
 
 // -----------------------------Nft Security--------------------------------------
 
 async function checkNftSecurity(contractAddress, tokenId) {
-  //const nftData = await getNftData(contractAddress, tokenId);
+  const nftData = await getNftData(contractAddress, tokenId);
   let hasMallware = false;
-  let isDuplicated = false;
 
   if (!nftData) {
     console.error('Failed to fetch NFT data');
@@ -38,13 +51,20 @@ async function checkNftSecurity(contractAddress, tokenId) {
   
     // Scan image file for malware
 
+    let info = '';
+
     hasMallware = await checkNftDataForMallware(nftData);
     
-    await analyzeNftCreator(contractAddress, tokenId)
-   
+    if(hasMallware) {
+      info = 'Nft is not real or contain mallware inside metadata'
+    }else{
+      info = await analyzeNftCreator(contractAddress, tokenId)
+    }
+  }
+
   return {
-    idDuplicated: isDuplicated || false,
-    isMalware: hasMallware || false,
+    isMalware: hasMallware,
+    info: info
   };
 }
 
@@ -136,9 +156,6 @@ async function scanUrlForMalware(url) {
   
         scanComplete = true;
   
-        // Process the scan results as before
-        // console.log(scanResult)
-
         const malicious = scanResult.data.verdicts.overall.malicious;
        
         if (malicious) {
@@ -208,10 +225,10 @@ async function analyzeNftCreator(contractAddress, tokenId) {
   const creatorTransactionCount = await getTransactionCount(creatorAddress);
   const transactionDetails = await getTransactionDetails(transactionHash);
 
-  console.log(`Creator address: ${creatorAddress}`);
-  console.log(`Transaction hash: ${transactionHash}`);
-  console.log(`Creator transaction count: ${creatorTransactionCount}`);
-  console.log(`Transaction details:`, transactionDetails);
+  return `Creator address: ${creatorAddress}
+  Transaction hash: ${transactionHash} 
+  Creator transaction count: ${creatorTransactionCount}
+  Transaction details: ${transactionDetails}`
 }
 
 async function getNftCreatorAndTransactionHash(contractAddress, tokenId) {

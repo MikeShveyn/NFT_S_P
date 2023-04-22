@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import "./CheckNftSecurity.css"
 import Button from '@mui/material/Button';
 import LinearProgress from '@mui/material/LinearProgress';
-
+import Alert from '@mui/material/Alert';
 
 export const CheckNftSecurity = () => {
-        const [nftStatus, setNftStatus] = useState('');
+        const [nftStatus, setNftStatus] = useState('warning');
+        const [nftInfo, setNftInfo] = useState('NFT in check...');
         const [contractAddress, setContractAddress] = useState('');
         const [tokenId, setTokenId] = useState('');
         const [loading, setLoading] = useState(false);
@@ -52,7 +53,10 @@ export const CheckNftSecurity = () => {
             setLoading(true)
             const response = await fetch(`http://localhost:4001/checkNftSecurity?contractAddress=${contractAddress}&tokenId=${tokenId}`);
             const data = await response.json();
-            setNftStatus(data.isSecure ? 'NFT is secure.' : 'NFT is not secure.');
+            const status = data.isSecure ? 'success' : 'error';
+            const info =  data.info;
+            setNftStatus(status);
+            setNftInfo(info)
           } catch (error) {
             console.error('Error while perform nft security check ', error)
           }finally {
@@ -63,7 +67,13 @@ export const CheckNftSecurity = () => {
       
         return (
           <div className='check-nft-security'>
-            <h2>NFT Status</h2>
+            <div className='in-header'>
+              <h2>NFT Status</h2>
+              <Alert className={'allertMe'} severity={nftStatus}>
+                  Check info below
+              </Alert>
+            </div>
+          
             <p class='bold'>Contract Address: {contractAddress}</p>
             <p class='bold'>Token ID: {tokenId}</p>
             {loading ? (
@@ -73,7 +83,7 @@ export const CheckNftSecurity = () => {
               </div>
             ) : (
               <div class="nft-result-security">
-                <p>{nftStatus}</p>
+                <p>{nftInfo}</p>
               </div>
             )}
              <Button 

@@ -12,6 +12,7 @@
 
   .bold {
     font-weight: 500;
+    font-size: 14px;
   }
 
   .nft-result-security {
@@ -24,7 +25,7 @@
   }
 
   .nft-result-security p {
-    font-size: 14px;
+    font-size: 12px;
   }
 
  

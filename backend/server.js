@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const { checkNftSecurity, checkSiteSecurity } = require('./nft');
-var url = require('url');
 
 const app = express();
 app.use(cors());
@@ -13,7 +12,7 @@ app.get('/checkSiteSecurity', async (req, res) => {
   const {protocol} = getFormattedUrl(url);
   const result = await checkSiteSecurity(protocol, url)
   console.log(result)
-  res.json({ isSecure: !result.mallware && result.hasSsl }); 
+  res.json({ isSecure: !result.mallware && result.hasSsl , info: result.info }); 
 });
 
 app.get('/checkNftSecurity', async (req, res) => {
@@ -24,12 +23,17 @@ app.get('/checkNftSecurity', async (req, res) => {
       return;
     }
   
-
     const result = await checkNftSecurity(contractAddress , tokenId)
     console.log(result)
-    res.json({ isSecure: !result.isDuplicated && !result.isMalware });
+    res.json({ isSecure: !result.isMalware , info: result.info  });
   });
 
+
+  app.post('/feedback', async(req, res) => {
+    const feedback = req.body.feedback;
+    console.log(feedback)
+    res.status(200);
+  })
 
 
 const PORT = process.env.PORT || 4001;

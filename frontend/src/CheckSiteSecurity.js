@@ -2,12 +2,11 @@ import React, { useState, useEffect } from 'react';
 import "./CheckSiteSecurity.css"
 import Button from '@mui/material/Button';
 import LinearProgress from '@mui/material/LinearProgress';
-import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 
 export const CheckSiteSecurity = () => {
   const [siteStatus, setSiteStatus] = useState('warning'); // warning error success
-  const [siteInfo, setSiteInfo] = useState('check status');
+  const [siteInfo, setSiteInfo] = useState('Site in check...');
   const [loading, setLoading] = useState(false);
 
   const getCurrentTab = async () => {
@@ -27,6 +26,14 @@ export const CheckSiteSecurity = () => {
           setSiteStatus(data[`siteStatus_${currentTab.id}`]);
         }
       });
+
+      chrome.storage.local.get(`siteInfo_${currentTab.id}`, (data) => {
+        if (data[`siteInfo_${currentTab.id}`]) {
+          setSiteInfo(data[`siteInfo_${currentTab.id}`])
+        }
+      });
+
+    
       
       performSecurityChecks(currentTab.url, currentTab.id);
     };
@@ -37,11 +44,13 @@ export const CheckSiteSecurity = () => {
   const performSecurityChecks = async (url, tabId) => {
     try {
         setLoading(true);
+        setSiteStatus('warning');
+        setSiteInfo('Site in check...');
         chrome.tabs.sendMessage(tabId, { action: 'firstWarning'});
         const response = await fetch(`http://localhost:4001/checkSiteSecurity?url=${url}`);
         const data = await response.json();
         const status = data.isSecure ? 'success' : 'error';
-        const info =  data.isSecure ? 'Site is secure' : 'Site is suspisios';
+        const info =  data.info;
         setSiteStatus(status);
         setSiteInfo(info);
 
@@ -50,6 +59,9 @@ export const CheckSiteSecurity = () => {
        
         // Store siteStatus
         chrome.storage.local.set({ [`siteStatus_${tabId}`]: status });
+
+        // Store siteStatus
+        chrome.storage.local.set({ [`siteInfo_${tabId}`]: info });
 
     }catch(e) {
         console.error('Error while perfoem security check ' ,e)
@@ -70,9 +82,9 @@ export const CheckSiteSecurity = () => {
     <div className='check-site-security'>
       <div className='in-header'>
         <h2>Site Status</h2>
-        <Alert severity={siteStatus}>
-            {siteInfo}
-          </Alert>
+        <Alert className={'allertMe'} severity={siteStatus}>
+           Check info below
+        </Alert>
       </div>
      
   
