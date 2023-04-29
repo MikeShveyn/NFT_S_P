@@ -1,8 +1,10 @@
 const express = require('express');
 const cors = require('cors');
+const bodyParser = require('body-parser');
 const { checkNftSecurity, checkSiteSecurity } = require('./nft');
 
 const app = express();
+app.use(bodyParser.json());
 app.use(cors());
 
 app.get('/checkSiteSecurity', async (req, res) => {
@@ -32,7 +34,7 @@ app.get('/checkNftSecurity', async (req, res) => {
   app.post('/feedback', async(req, res) => {
     const feedback = req.body.feedback;
     console.log(feedback)
-    res.status(200);
+    res.status(200).send('Feedback received successfully');
   })
 
 
