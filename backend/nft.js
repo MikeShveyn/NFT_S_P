@@ -39,26 +39,21 @@ async function checkSiteSecurity(ssl, fullUrl) {
 async function checkNftSecurity(contractAddress, tokenId) {
   const nftData = await getNftData(contractAddress, tokenId);
   let hasMallware = false;
+  let info = 'no info evaliable';
 
   if (!nftData) {
     console.error('Failed to fetch NFT data');
     hasMallware = true;
   }else{
     console.log('NFT Data:', nftData);
-
     // Check for metadata duplication
     // This can be done by comparing the metadata's hash with other NFTs, but NFTPort does not provide this functionality.
-  
     // Scan image file for malware
-
-    let info = '';
-
     hasMallware = await checkNftDataForMallware(nftData);
-    
     if(hasMallware) {
       info = 'Nft is not real or contain mallware inside metadata'
     }else{
-      info = await analyzeNftCreator(contractAddress, tokenId)
+      info = await analyzeNftCreator(contractAddress, tokenId) 
     }
   }
 
@@ -219,16 +214,28 @@ async function checkNftDataForMallware(nftData) {
 // ************************************ analyzeNftCreator AND HELEPR FUNCTIONS WORKS WITH ETHER API **************************************
 async function analyzeNftCreator(contractAddress, tokenId) {
   const creatorAndTransaction = await getNftCreatorAndTransactionHash(contractAddress, tokenId);
-  const creatorAddress = creatorAndTransaction.creatorAddress;
-  const transactionHash = creatorAndTransaction.transactionHash;
+  console.log('creator and transaction ', creatorAndTransaction)
+  if(creatorAndTransaction) {
+    const creatorAddress = creatorAndTransaction.creatorAddress;
+    const transactionHash = creatorAndTransaction.transactionHash;
+    let creatorTransactionCount = '';
+    let transactionDetails = '';
+    try {
+      creatorTransactionCount = await getTransactionCount(creatorAddress);
+      transactionDetails = await getTransactionDetails(transactionHash);
+      transactionDetails['input']='';
+    }catch(e) {
+      console.error(e);
+    }
 
-  const creatorTransactionCount = await getTransactionCount(creatorAddress);
-  const transactionDetails = await getTransactionDetails(transactionHash);
+    return `Creator address: ${creatorAddress}
+    Transaction hash: ${transactionHash} 
+    Creator transaction count: ${creatorTransactionCount}
+    Transaction details: ${JSON.stringify(transactionDetails)}`
+  }else{
+    return null;
+  }
 
-  return `Creator address: ${creatorAddress}
-  Transaction hash: ${transactionHash} 
-  Creator transaction count: ${creatorTransactionCount}
-  Transaction details: ${transactionDetails}`
 }
 
 async function getNftCreatorAndTransactionHash(contractAddress, tokenId) {
