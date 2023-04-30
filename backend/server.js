@@ -4,7 +4,8 @@ const bodyParser = require('body-parser');
 const { checkNftSecurity, checkSiteSecurity } = require('./nft');
 const HttpError = require("./models/http-error");
 const mongoose = require('mongoose');
-const Feedback= require('./models/feedback')
+const Feedback= require('./models/feedback');
+const NftReport = require('./models/nftreport');
 
 const app = express();
 
@@ -39,7 +40,43 @@ app.get('/checkNftSecurity', async (req, res) => {
     }
   
     const result = await checkNftSecurity(contractAddress , tokenId)
-    console.log(result)
+
+    console.log(result.dbInfo)
+
+    if(result.dbInfo) {
+      const nftReport = new NftReport({
+        chain: result.dbInfo.chain,
+        contract_address: result.dbInfo.contract_address,
+        token_id: result.dbInfo.token_id,
+        metadata_url: result.dbInfo.metadata_url,
+        metadata: {
+            image:  result.dbInfo.metadata.image,
+            name:  result.dbInfo.metadata.name,
+            description :result.dbInfo.metadata.description,
+        },
+        file_information: {
+            height: result.dbInfo.height,
+            width: result.dbInfo.width,
+            file_size: result.dbInfo.file_size, 
+        },  
+        file_url: result.dbInfo.file_url,
+        mint_date: result.dbInfo.mint_date,
+        updated_date: result.dbInfo.updated_date,
+        owner: result.dbInfo.owner
+    })
+  
+      nftReport.save()
+      .then(() => {
+        console.log('nftReport saved to database');
+        mongoose.disconnect(); // Disconnect from the database
+      })
+      .catch(error => {
+        console.error('Error saving nftReport to database:', error);
+        mongoose.disconnect(); // Disconnect from the database
+      });
+  
+    }
+   
     res.json({ isSecure: !result.isMalware , info: result.info  });
   });
 
@@ -49,7 +86,7 @@ app.get('/checkNftSecurity', async (req, res) => {
      const feedback = new Feedback({
       text: req.body.feedback
     });
-    console.log('feedbacke to save : ' , req.body.feedback)
+    console.log('feedback to save : ' , req.body.feedback)
     // Save the feedback object to the database
     feedback.save()
       .then(() => {
