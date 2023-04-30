@@ -227,11 +227,8 @@ async function analyzeNftCreator(contractAddress, tokenId) {
     }catch(e) {
       console.error(e);
     }
-
-    return `Creator address: ${creatorAddress}
-    Transaction hash: ${transactionHash} 
-    Creator transaction count: ${creatorTransactionCount}
-    Transaction details: ${JSON.stringify(transactionDetails)}`
+    return `Transaction hash: ${transactionHash} 
+    Creator transaction count: ${creatorTransactionCount}`
   }else{
     return null;
   }

@@ -26,10 +26,10 @@
 
   .nft-result-security p {
     font-size: 14px;
-    padding: 14px;
+    padding: 14px 14px 14px 0;
     height: 124px;
     width: 320px;
-    overflow-y: scroll;
+    overflow-y: auto;
     overflow-x: hidden;
   }
 

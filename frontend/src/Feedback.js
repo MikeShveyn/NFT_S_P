@@ -9,7 +9,7 @@ const FeedbackForm = () => {
       e.preventDefault();
       // You can send this data to your backend or do anything else with it
       setSubmitted(true);
-      fetch('http://localhost:4001/feedback', {
+      fetch(`${process.env.REACT_APP_BACKEDN_URL}/feedback`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

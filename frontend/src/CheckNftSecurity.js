@@ -6,7 +6,7 @@ import Alert from '@mui/material/Alert';
 
 export const CheckNftSecurity = () => {
         const [nftStatus, setNftStatus] = useState('warning');
-        const [nftInfo, setNftInfo] = useState('NFT in check...');
+        const [nftInfo, setNftInfo] = useState('');
         const [contractAddress, setContractAddress] = useState('');
         const [tokenId, setTokenId] = useState('');
         const [loading, setLoading] = useState(false);
@@ -51,7 +51,7 @@ export const CheckNftSecurity = () => {
         const performNftSecurityChecks = async () => {
           try {
             setLoading(true)
-            const response = await fetch(`http://localhost:4001/checkNftSecurity?contractAddress=${contractAddress}&tokenId=${tokenId}`);
+            const response = await fetch(`${process.env.REACT_APP_BACKEDN_URL}/checkNftSecurity?contractAddress=${contractAddress}&tokenId=${tokenId}`);
             const data = await response.json();
             const status = data.isSecure ? 'success' : 'error';
             const info =  data.info;

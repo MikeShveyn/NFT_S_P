@@ -1,0 +1,8 @@
+{
+    "env": {
+        "DB_USER": "mike",
+        "DB_PASSWORD": "6bghlH7X46aTkRNH",
+        "DB_NAME": "nft-dev",
+        "PORT": 4001
+    }
+}

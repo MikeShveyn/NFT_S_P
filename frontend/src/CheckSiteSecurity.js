@@ -34,8 +34,10 @@ export const CheckSiteSecurity = () => {
       });
 
     
-      
-      performSecurityChecks(currentTab.url, currentTab.id);
+      if(!siteStatus) {
+        performSecurityChecks(currentTab.url, currentTab.id);
+      }
+    
     };
 
     fetchStoredStatus();
@@ -47,7 +49,7 @@ export const CheckSiteSecurity = () => {
         setSiteStatus('warning');
         setSiteInfo('Site in check...');
         chrome.tabs.sendMessage(tabId, { action: 'firstWarning'});
-        const response = await fetch(`http://localhost:4001/checkSiteSecurity?url=${url}`);
+        const response = await fetch(`${process.env.REACT_APP_BACKEDN_URL}/checkSiteSecurity?url=${url}`);
         const data = await response.json();
         const status = data.isSecure ? 'success' : 'error';
         const info =  data.info;
