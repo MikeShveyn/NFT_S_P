@@ -39,6 +39,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   } else if(message.action === 'firstWarning') {
     removeWarningBanner()
     this.injectWarningBanner('#537FE7', 'We perform security check... Please do not perform any actions till we have full report.')
+  } else if (message.action === 'injectNftWarning') {
+    removeWarningBanner()
+    const color = message.secure ? '#54B435' : 'red'
+    const text = message.secure 
+    ? 'This NFT asset is secure. More information can be found inside extention.'
+    : 'Warning: This NFT asset may contain malware. It is recommended to disable other extensions or avoid working with this asset.'
+    injectWarningBanner(color, text);
+    setTimeout(()=>{
+      removeWarningBanner()
+    },4000)
   }
 });
 

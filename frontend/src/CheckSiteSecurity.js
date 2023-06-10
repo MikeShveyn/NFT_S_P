@@ -26,13 +26,6 @@ export const CheckSiteSecurity = () => {
           setSiteStatus(data[`siteStatus_${currentTab.id}`]);
         }
       });
-
-      chrome.storage.local.get(`siteInfo_${currentTab.id}`, (data) => {
-        if (data[`siteInfo_${currentTab.id}`]) {
-          setSiteInfo(data[`siteInfo_${currentTab.id}`])
-        }
-      });
-
     
       if(!siteStatus) {
         performSecurityChecks(currentTab.url, currentTab.id);
@@ -54,16 +47,12 @@ export const CheckSiteSecurity = () => {
         const status = data.isSecure ? 'success' : 'error';
         const info =  data.info;
         setSiteStatus(status);
-        setSiteInfo(info);
-
+     
         // Add injected banner into webpage
         chrome.tabs.sendMessage(tabId, { action: 'injectWarning' , secure: data.isSecure});
        
         // Store siteStatus
         chrome.storage.local.set({ [`siteStatus_${tabId}`]: status });
-
-        // Store siteStatus
-        chrome.storage.local.set({ [`siteInfo_${tabId}`]: info });
 
     }catch(e) {
         console.error('Error while perfoem security check ' ,e)
@@ -77,6 +66,33 @@ export const CheckSiteSecurity = () => {
     const currentTab = await getCurrentTab();
     console.log('current tab ', currentTab);
     performSecurityChecks(currentTab.url, currentTab.id);
+  };
+
+
+  const ListItem = ({ text, completed }) => {
+    return (
+      <li className="list-item">
+        {completed ? <span>&#10003;</span> : null} {text}
+      </li>
+    );
+  };
+
+
+
+  const ListWithIcons = ({c1, c2, c3}) => {
+    const items = [
+      { text: 'Site has valid ssl', completed: c1},
+      { text: 'Site not contains mallware.', completed: c2},
+      { text: 'Site not in black list', completed: c3},
+    ];
+  
+    return (
+      <ul className="list-container">
+        {items.map((item, index) => (
+          <ListItem key={index} text={item.text} completed={item.completed} />
+        ))}
+      </ul>
+    );
   };
 
 
@@ -95,6 +111,14 @@ export const CheckSiteSecurity = () => {
           <p>Checking site security, please wait...</p>
           <LinearProgress color="success" />
         </div>
+      ): siteStatus === 'success' ? (
+        <div class="nft-result-security">
+          <ListWithIcons c1={true} c2={true} c3={true}/>
+        </div>
+      ): siteStatus === 'error' ? (
+        <div class="nft-result-security">
+          <ListWithIcons c1={false} c2={false} c3={false}/>
+        </div>  
       ) : (
         <div class="result-security">
           <p>{siteInfo}</p>

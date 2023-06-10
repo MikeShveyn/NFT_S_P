@@ -77,7 +77,7 @@ app.get('/checkNftSecurity', async (req, res) => {
   
     }
    
-    res.json({ isSecure: !result.isMalware , info: result.info  });
+    res.json({ isSecure: !result.isMalware });
   });
 
 

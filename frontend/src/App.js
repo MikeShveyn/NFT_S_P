@@ -53,8 +53,6 @@ function App() {
   };
 
   return (
- 
-
         <div className="main-contaiener">
       <header>
         <div className="logo">
@@ -89,7 +87,7 @@ function App() {
       </TabPanel>
 
       <footer>
-        <p>Support : <a href="" target="_blank">Support Team</a> </p>
+        <p>Support : <a href="https://docs.google.com/document/d/e/2PACX-1vRtUVnIfJSbejeR2NE6nt07zLXqK1N_34THjOl_55-0jU4rHUlMi-sAro4YLY2ePI-MK0WGlemX95hx/pub" target="_blank">Documentation</a> </p>
       </footer>
     </div>
  
