@@ -28,7 +28,7 @@ app.get('/checkSiteSecurity', async (req, res) => {
   const {protocol} = getFormattedUrl(url);
   const result = await checkSiteSecurity(protocol, url)
   console.log(result)
-  res.json({ isSecure: !result.mallware && result.hasSsl , info: result.info }); 
+  res.json({ mallwareFree: !result.mallware ,ssl: result.hasSsl }); 
 });
 
 app.get('/checkNftSecurity', async (req, res) => {
@@ -45,26 +45,15 @@ app.get('/checkNftSecurity', async (req, res) => {
 
     if(result.dbInfo) {
       const nftReport = new NftReport({
-        chain: result.dbInfo.chain,
-        contract_address: result.dbInfo.contract_address,
-        token_id: result.dbInfo.token_id,
-        metadata_url: result.dbInfo.metadata_url,
-        metadata: {
-            image:  result.dbInfo.metadata.image,
-            name:  result.dbInfo.metadata.name,
-            description :result.dbInfo.metadata.description,
-        },
-        file_information: {
-            height: result.dbInfo.height,
-            width: result.dbInfo.width,
-            file_size: result.dbInfo.file_size, 
-        },  
-        file_url: result.dbInfo.file_url,
-        mint_date: result.dbInfo.mint_date,
-        updated_date: result.dbInfo.updated_date,
-        owner: result.dbInfo.owner
-    })
-  
+        chain: result.dbInfo?.chain || undefined,
+        contract_address: result.dbInfo?.contract_address || undefined,
+        token_id: result.dbInfo?.token_id || undefined,
+        file_url: result.dbInfo?.file_url || undefined,
+        file_size: result.dbInfo?.file_size || 0,
+        mint_date: result.dbInfo?.mint_date || undefined,
+        owner: result.dbInfo?.owner || undefined
+    });
+    
       nftReport.save()
       .then(() => {
         console.log('nftReport saved to database');

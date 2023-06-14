@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from 'react';
 import { CheckNftSecurity } from "./CheckNftSecurity";
 import { CheckSiteSecurity } from "./CheckSiteSecurity";
 import PropTypes from 'prop-types';
@@ -47,9 +47,14 @@ function a11yProps(index) {
 
 function App() {
   const [value, setValue] = React.useState(0);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
+  };
+
+  const handleLoading = (loadingState) => {
+      setLoading(loadingState)
   };
 
   return (
@@ -60,7 +65,7 @@ function App() {
         </div>
         <h1>NFT DEFENDER</h1>
       </header>
-
+    
 
       <Box className="tabBox" sx={{ borderBottom: 1, borderColor: 'divider' }}>
       <Tabs
@@ -70,20 +75,21 @@ function App() {
           textColor="inherit"
           variant="fullWidth"
           aria-label="full width tabs example"
+          disabled={loading}
         >
-          <Tab label="Site Security" {...a11yProps(0)} />
+          <Tab label="Site Security" {...a11yProps(0)}  />
           <Tab label="NFT Security" {...a11yProps(1)} />
           <Tab label="Feedback" {...a11yProps(2)} />
         </Tabs>
       </Box>
       <TabPanel value={value} index={0}>
-      <CheckSiteSecurity/>
+      <CheckSiteSecurity onLoading={handleLoading}/>
       </TabPanel>
       <TabPanel value={value} index={1}>
-      <CheckNftSecurity/>
+      <CheckNftSecurity onLoading={handleLoading}/>
       </TabPanel>
       <TabPanel value={value} index={2}>
-        <FeedbackForm/>
+        <FeedbackForm onLoading={handleLoading}/>
       </TabPanel>
 
       <footer>

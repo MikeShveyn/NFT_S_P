@@ -1,21 +1,33 @@
 import React, { useState } from 'react';
 import './Feedback.css'
 
-const FeedbackForm = () => {
+const FeedbackForm = ({ onLoading }) => {
     const [feedback, setFeedback] = useState('');
     const [submitted, setSubmitted] = useState(false);
+    const [loading, setLoading] = useState(false);
   
     const handleSubmit = (e) => {
       e.preventDefault();
-      // You can send this data to your backend or do anything else with it
-      setSubmitted(true);
-      fetch(`${process.env.REACT_APP_BACKEDN_URL}/feedback`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ feedback }),
-      })
+      try{
+        setLoading(true)
+        onLoading(true)
+        // You can send this data to your backend or do anything else with it
+        fetch(`${process.env.REACT_APP_BACKEDN_URL}/feedback`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ feedback }),
+        })
+        
+      }catch(e) {
+        console.error(e)
+      }finally{
+        setSubmitted(true);
+        setLoading(false)
+        onLoading(false)
+      }
+
     };
   
     return (
@@ -30,7 +42,7 @@ const FeedbackForm = () => {
               onChange={(e) => setFeedback(e.target.value)}
             />
             <br />
-            <button type="submit">Submit</button>
+            <button disabled={loading} type="submit">Submit</button>
           </form>
         )}
         {submitted && <p className="feedback-message">Thanks for the feedback!</p>}

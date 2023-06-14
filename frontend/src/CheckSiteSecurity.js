@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import "./CheckSiteSecurity.css"
 import Button from '@mui/material/Button';
 import LinearProgress from '@mui/material/LinearProgress';
-import Alert from '@mui/material/Alert';
 
-export const CheckSiteSecurity = () => {
-  const [siteStatus, setSiteStatus] = useState('warning'); // warning error success
-  const [siteInfo, setSiteInfo] = useState('Site in check...');
+export const CheckSiteSecurity = ({ onLoading }) => {
+  const [siteStatus, setSiteStatus] = useState(''); // warning error success
+  const [siteInfo, setSiteInfo] = useState('');
+  const [siteCheckInfo, setSiteCheckInfo] = useState({ssl : true, mallwareFree : true});
   const [loading, setLoading] = useState(false);
 
   const getCurrentTab = async () => {
@@ -21,51 +21,68 @@ export const CheckSiteSecurity = () => {
     const fetchStoredStatus = async () => {
       const currentTab = await getCurrentTab();
       // Retrieve stored siteStatus for the current tab
-      chrome.storage.local.get(`siteStatus_${currentTab.id}`, (data) => {
-        if (data[`siteStatus_${currentTab.id}`]) {
-          setSiteStatus(data[`siteStatus_${currentTab.id}`]);
+      const domain = new URL(currentTab.url).origin;
+
+      chrome.storage.local.get(`siteCheckInfo_${domain}`, (data1) => {
+        if (data1[`siteCheckInfo_${domain}`]) {
+          const data = JSON.parse(data1[`siteCheckInfo_${domain}`])
+          setSiteCheckInfo({ssl: data.ssl, mallwareFree: data.mallwareFree});
         }
       });
-    
-      if(!siteStatus) {
-        performSecurityChecks(currentTab.url, currentTab.id);
-      }
-    
-    };
 
+
+      chrome.storage.local.get(`siteStatus_${domain}`, (data2) => {
+        if (data2[`siteStatus_${domain}`]) {
+          setSiteStatus(data2[`siteStatus_${domain}`]);
+        }else{
+          performSecurityChecks(domain, currentTab.id);
+        }
+      });
+
+    };
     fetchStoredStatus();
   }, []);
 
   const performSecurityChecks = async (url, tabId) => {
     try {
+        // Extract domain from URL
         setLoading(true);
-        setSiteStatus('warning');
+        onLoading(true);
+        setSiteStatus('');
         setSiteInfo('Site in check...');
         chrome.tabs.sendMessage(tabId, { action: 'firstWarning'});
         const response = await fetch(`${process.env.REACT_APP_BACKEDN_URL}/checkSiteSecurity?url=${url}`);
         const data = await response.json();
-        const status = data.isSecure ? 'success' : 'error';
-        const info =  data.info;
+        const status = data.ssl && data.mallwareFree ? 'success' : 'error';
+        setSiteCheckInfo({ssl: data.ssl, mallwareFree: data.mallwareFree})
         setSiteStatus(status);
      
         // Add injected banner into webpage
-        chrome.tabs.sendMessage(tabId, { action: 'injectWarning' , secure: data.isSecure});
-       
-        // Store siteStatus
-        chrome.storage.local.set({ [`siteStatus_${tabId}`]: status });
+        chrome.tabs.sendMessage(tabId, { action: 'injectWarning' , secure: data.ssl && data.mallwareFree});
 
+        // Store siteStatus
+        chrome.storage.local.set({ [`siteStatus_${url}`]: status });
+        chrome.storage.local.set({ [`siteCheckInfo_${url}`]: JSON.stringify(siteCheckInfo)});
+    
     }catch(e) {
         console.error('Error while perfoem security check ' ,e)
+        setSiteStatus('');
+        chrome.storage.local.set({ [`siteStatus_${url}`]: '' });
+        chrome.storage.local.set({ [`siteCheckInfo_${url}`]: JSON.stringify(siteCheckInfo)});
+        // Add injected banner into webpage
+        chrome.tabs.sendMessage(tabId, { action: 'removeWarning' });
     }finally{
         setLoading(false);
+        onLoading(false);
+        setSiteInfo('');
     }
    
   };
 
   const handleButtonClick = async () => {
     const currentTab = await getCurrentTab();
-    console.log('current tab ', currentTab);
-    performSecurityChecks(currentTab.url, currentTab.id);
+    const domain = new URL(currentTab.url).origin;
+    performSecurityChecks(domain, currentTab.id);
   };
 
 
@@ -79,11 +96,11 @@ export const CheckSiteSecurity = () => {
 
 
 
-  const ListWithIcons = ({c1, c2, c3}) => {
+  const ListWithIcons = ({ssl, mallware}) => {
     const items = [
-      { text: 'Site has valid ssl', completed: c1},
-      { text: 'Site not contains mallware.', completed: c2},
-      { text: 'Site not in black list', completed: c3},
+      { text: ssl ? 'Site has valid ssl' : 'Site has not valid ssl', completed: ssl},
+      { text: mallware ? 'Site not contains mallware' : 'Site could contain mallware', completed: mallware},
+      { text: ssl && mallware ? 'Site is secure to use' : 'Site could be harmful', completed: ssl && mallware},
     ];
   
     return (
@@ -100,9 +117,6 @@ export const CheckSiteSecurity = () => {
     <div className='check-site-security'>
       <div className='in-header'>
         <h2>Site Status</h2>
-        <Alert className={'allertMe'} severity={siteStatus}>
-           Check info below
-        </Alert>
       </div>
      
   
@@ -111,14 +125,10 @@ export const CheckSiteSecurity = () => {
           <p>Checking site security, please wait...</p>
           <LinearProgress color="success" />
         </div>
-      ): siteStatus === 'success' ? (
+      ): siteStatus != '' ? (
         <div class="nft-result-security">
-          <ListWithIcons c1={true} c2={true} c3={true}/>
+          <ListWithIcons ssl={siteCheckInfo.ssl} mallware={siteCheckInfo.mallwareFree}/>
         </div>
-      ): siteStatus === 'error' ? (
-        <div class="nft-result-security">
-          <ListWithIcons c1={false} c2={false} c3={false}/>
-        </div>  
       ) : (
         <div class="result-security">
           <p>{siteInfo}</p>

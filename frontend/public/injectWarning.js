@@ -26,8 +26,6 @@ function removeWarningBanner() {
   }
 }
 
-console.log('I am alive !!!!')  
-
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'injectWarning') {
     removeWarningBanner()
@@ -48,7 +46,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     injectWarningBanner(color, text);
     setTimeout(()=>{
       removeWarningBanner()
-    },4000)
+    },10000)
+  } else if(message.action === 'removeWarning') {
+    removeWarningBanner()
   }
 });
 

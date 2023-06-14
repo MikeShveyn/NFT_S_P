@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import "./CheckNftSecurity.css"
 import Button from '@mui/material/Button';
 import LinearProgress from '@mui/material/LinearProgress';
-import Alert from '@mui/material/Alert';
 
-export const CheckNftSecurity = () => {
-        const [nftStatus, setNftStatus] = useState('warning');
+
+export const CheckNftSecurity = ({ onLoading }) => {
+        const [nftStatus, setNftStatus] = useState('');
         const [nftInfo, setNftInfo] = useState('');
         const [contractAddress, setContractAddress] = useState('');
         const [tokenId, setTokenId] = useState('');
@@ -20,15 +20,15 @@ export const CheckNftSecurity = () => {
             setNftInfo('')
 
             // Retrieve stored siteStatus for the current tab
-            chrome.storage.local.get(`nftStatus_${tab.id}`, (data) => {
-            if (data[`nftStatus_${tab.id}`]) {
-              setNftStatus(data[`nftStatus_${tab.id}`]);
+            chrome.storage.local.get(`nftStatus_${tab.url}`, (data) => {
+            if (data[`nftStatus_${tab.url}`]) {
+              setNftStatus(data[`nftStatus_${tab.url}`]);
             }
           });
           } else {
             setContractAddress('');
             setTokenId('');
-            setNftInfo('Please open specific nft asset screen')
+            setNftInfo('Please open specific NFT asset screen')
           }
         };
 
@@ -69,9 +69,13 @@ export const CheckNftSecurity = () => {
         const performNftSecurityChecks = async (url, tabId) => {
           try {
             setLoading(true)
+            onLoading(true)
             chrome.tabs.sendMessage(tabId, { action: 'firstWarning'});
             const response = await fetch(`${process.env.REACT_APP_BACKEDN_URL}/checkNftSecurity?contractAddress=${contractAddress}&tokenId=${tokenId}`);
             const data = await response.json();
+            if(!data) {
+              throw Error('failed to check');
+            }
             const status = data.isSecure ? 'success' : 'error';
             const info = data.isSecure ? 'Nft is secure' : 'Nft is not secure';
             setNftStatus(status);
@@ -82,12 +86,17 @@ export const CheckNftSecurity = () => {
             
 
               // Store siteStatus
-            chrome.storage.local.set({ [`nftStatus_${tabId}`]: status });
+            chrome.storage.local.set({ [`nftStatus_${url}`]: status });
 
           } catch (error) {
             console.error('Error while perform nft security check ', error)
+            // Add injected banner into webpage
+            chrome.tabs.sendMessage(tabId, { action: 'removeWarning' });
+            // Store siteStatus
+            chrome.storage.local.set({ [`nftStatus_${url}`]: '' });
           }finally {
             setLoading(false)
+            onLoading(false)
           }
        
         };
@@ -95,14 +104,12 @@ export const CheckNftSecurity = () => {
 
         const handleButtonClick = async () => {
           const currentTab = await getCurrentTab();
-          console.log('current tab ', currentTab);
           performNftSecurityChecks(currentTab.url, currentTab.id);
         };
 
 
 
         const ListItem = ({ text, completed }) => {
-          console.log(text, completed)
           return (
             <li className="list-item">
               {completed ? <span>&#10003;</span> : null} {text}
@@ -114,9 +121,9 @@ export const CheckNftSecurity = () => {
 
         const ListWithIcons = ({c1, c2, c3}) => {
           const items = [
-            { text: 'NFT links are secure', completed: c1},
-            { text: 'NFT owner is verified', completed: c2},
-            { text: 'NFT Asset exists and real', completed: c3},
+            { text: c1 ? 'NFT links are secure' : 'NFT links could contain mallware', completed: c1},
+            { text: c2? 'NFT owner is verified' : 'NFT owner not verified', completed: c2},
+            { text: c1 && c2 ? 'NFT Asset exists and real' : 'NFT Asset could be fake', completed: c3},
           ];
         
           return (
@@ -134,9 +141,6 @@ export const CheckNftSecurity = () => {
           <div className='check-nft-security'>
             <div className='in-header'>
               <h2>NFT Status</h2>
-              <Alert className={'allertMe'} severity={nftStatus}>
-                  Check info below
-              </Alert>
             </div>
           
             <p class='bold'>Contract Address: {contractAddress}</p>

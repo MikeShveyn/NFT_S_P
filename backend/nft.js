@@ -15,25 +15,9 @@ async function checkSiteSecurity(ssl, fullUrl) {
   
   const mallware = await scanUrlForMalware(fullUrl)
 
-  let info = '';
-  
-  if(!hasSsl && mallware) {
-      info = `Site ${fullUrl} has no valid ssl and contain mallware.`
-  }
-  else if(!hasSsl && !mallware) {
-      info = `Site ${fullUrl} has no valid ssl but do not contain mallware.`
-  }
-  else if(hasSsl && mallware) {
-      info = `Site ${fullUrl} has valid ssl but contain mallware.`
-  }
-  else{
-    info = `Site ${fullUrl} has valid ssl and not contain mallware.`
-  }
-
   return {
     hasSsl: hasSsl,
     mallware: mallware,
-    info: info
   };
 }
 
