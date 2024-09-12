@@ -2,9 +2,9 @@ const axios = require('axios');
 const mongoose = require('mongoose');
 
 
-const urlScanApiKey = '24e8d9c4-5419-4a2d-b258-d5613f8015e6';
-const nftPortApiKey = '145566cf-dda7-4b7f-ab74-bbd336ed6377';
-const etherscanApiKey = 'W5FKNHAJ87DX32TIF71QNXUIUAY5B7TAHF';
+const urlScanApiKey = 'enter';
+const nftPortApiKey = 'enter';
+const etherscanApiKey = 'enter';
 
 
 // --------------------------SITE SECURITY---------------------------------------
